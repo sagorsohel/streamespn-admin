@@ -137,7 +137,7 @@ export const MatchesPage: React.FC = () => {
     try {
       const [catRes, subRes] = await Promise.all([
         api.get('/sports'),
-        api.get('/subcategories'),
+        api.get('/subcategories?all=true'),
       ]);
 
       if (catRes.data?.success) setCategories(catRes.data.data.sports || []);
@@ -151,7 +151,7 @@ export const MatchesPage: React.FC = () => {
   const fetchMatches = async () => {
     setLoading(true);
     try {
-      let url = '/matches?';
+      let url = '/matches?all=true&';
       if (selectedCategoryId !== 'all') url += `categoryId=${selectedCategoryId}&`;
       if (selectedSubcategoryId !== 'all') url += `subcategoryId=${selectedSubcategoryId}&`;
       if (statusTab !== 'all') url += `status=${statusTab}&`;

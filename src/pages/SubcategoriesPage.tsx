@@ -87,8 +87,8 @@ export const SubcategoriesPage: React.FC = () => {
     setLoading(true);
     try {
       const url = selectedCategoryId !== 'all' 
-        ? `/subcategories?categoryId=${selectedCategoryId}` 
-        : '/subcategories';
+        ? `/subcategories?categoryId=${selectedCategoryId}&all=true` 
+        : '/subcategories?all=true';
       const response = await api.get(url);
       if (response.data?.success) {
         setSubcategories(response.data.data.subcategories || []);
