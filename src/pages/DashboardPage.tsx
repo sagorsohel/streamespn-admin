@@ -54,7 +54,7 @@ export const DashboardPage: React.FC = () => {
             </div>
             <h1 className="text-2xl font-black text-white">{user?.name || 'System Admin'}</h1>
             <p className="text-xs text-slate-400">
-              Logged in as <span className="text-slate-200 font-mono">{user?.email || 'admin@gmail.com'}</span> • Role:{' '}
+              Logged in as <span className="text-slate-200 font-mono">{user?.email || 'N/A'}</span> • Role:{' '}
               <span className="rounded bg-rose-500/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-rose-300">
                 {user?.role || 'ADMIN'}
               </span>
@@ -207,7 +207,7 @@ export const DashboardPage: React.FC = () => {
             </div>
             <div className="flex justify-between">
               <span className="text-slate-500">Email:</span>
-              <span className="font-mono text-slate-300">{user?.email || 'admin@gmail.com'}</span>
+              <span className="font-mono text-slate-300">{user?.email || 'N/A'}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-500">Role:</span>

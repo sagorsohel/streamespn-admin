@@ -161,7 +161,7 @@ export const AdminLayout: React.FC = () => {
               </div>
               <div className="truncate">
                 <p className="truncate text-xs font-semibold text-white">{user?.name || 'System Admin'}</p>
-                <p className="truncate text-[11px] text-slate-400">{user?.email || 'admin@gmail.com'}</p>
+                <p className="truncate text-[11px] text-slate-400">{user?.email || 'N/A'}</p>
               </div>
             </div>
             <span className="rounded bg-rose-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-rose-300 border border-rose-500/30 uppercase">
@@ -218,7 +218,7 @@ export const AdminLayout: React.FC = () => {
             <div className="flex items-center gap-2">
               <div className="text-right text-xs">
                 <p className="font-semibold text-white truncate max-w-[100px] sm:max-w-none">{user?.name || 'Admin'}</p>
-                <p className="text-[10px] text-slate-400 hidden sm:block">{user?.email || 'admin@gmail.com'}</p>
+                <p className="text-[10px] text-slate-400 hidden sm:block">{user?.email || ''}</p>
               </div>
             </div>
           </div>

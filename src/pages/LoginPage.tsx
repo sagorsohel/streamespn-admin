@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
-import { loginUser, clearError, setDemoAuth } from '../store/slices/authSlice';
-import { Tv, Lock, Mail, ArrowRight, KeyRound, ShieldCheck, AlertCircle } from 'lucide-react';
+import { loginUser, clearError } from '../store/slices/authSlice';
+import { Tv, Lock, Mail, ArrowRight, AlertCircle } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState('admin@gmail.com');
-  const [password, setPassword] = useState('sohoj@sohoj');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
@@ -22,17 +22,6 @@ export const LoginPage: React.FC = () => {
     e.preventDefault();
     if (!email || !password) return;
     dispatch(loginUser({ email, password }));
-  };
-
-  const handleFillDemo = () => {
-    setEmail('admin@gmail.com');
-    setPassword('sohoj@sohoj');
-    dispatch(clearError());
-  };
-
-  const handleDirectDemoLogin = () => {
-    dispatch(setDemoAuth());
-    navigate('/dashboard');
   };
 
   return (
@@ -73,7 +62,7 @@ export const LoginPage: React.FC = () => {
                     setEmail(e.target.value);
                     if (error) dispatch(clearError());
                   }}
-                  placeholder="admin@gmail.com"
+                  placeholder="admin@example.com"
                   required
                   className="h-10 w-full rounded-xl border border-slate-800 bg-slate-950/80 pl-10 pr-3 text-sm text-slate-100 placeholder-slate-600 transition-all focus:border-rose-500 focus:outline-none focus:ring-1 focus:ring-rose-500"
                 />
@@ -115,39 +104,6 @@ export const LoginPage: React.FC = () => {
               )}
             </button>
           </form>
-
-          {/* Quick Demo Credentials Box */}
-          <div className="rounded-xl border border-slate-800/80 bg-slate-950/50 p-4 space-y-3">
-            <div className="flex items-center justify-between text-xs">
-              <span className="flex items-center gap-1.5 font-semibold text-slate-300">
-                <KeyRound className="h-3.5 w-3.5 text-rose-400" /> Demo Credentials
-              </span>
-              <button
-                type="button"
-                onClick={handleFillDemo}
-                className="text-[11px] font-medium text-rose-400 hover:underline"
-              >
-                Auto Fill
-              </button>
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-[11px] font-mono bg-slate-900/60 p-2 rounded-lg text-slate-300 border border-slate-800">
-              <div>
-                <span className="text-slate-500">Email:</span> admin@gmail.com
-              </div>
-              <div>
-                <span className="text-slate-500">Pass:</span> sohoj@sohoj
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={handleDirectDemoLogin}
-              className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-slate-700/80 bg-slate-800/60 py-2 text-xs font-medium text-slate-200 transition-colors hover:bg-slate-700 hover:text-white"
-            >
-              <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-              <span>Instant Demo Sign-In</span>
-            </button>
-          </div>
         </div>
       </div>
     </div>

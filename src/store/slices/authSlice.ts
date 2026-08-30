@@ -45,21 +45,8 @@ export const loginUser = createAsyncThunk(
       }
       return rejectWithValue(response.data?.message || 'Login failed');
     } catch (err: any) {
-      // Fallback for demo credentials if backend service is unreachable or not yet initialized
       if (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
-        if (credentials.email === 'admin@gmail.com' && credentials.password === 'sohoj@sohoj') {
-          const demoUser: User = {
-            id: 1,
-            name: 'System Admin',
-            email: 'admin@gmail.com',
-            role: 'admin',
-          };
-          const demoToken = 'demo_jwt_token_admin_streamespn';
-          localStorage.setItem('token', demoToken);
-          localStorage.setItem('user', JSON.stringify(demoUser));
-          return { user: demoUser, token: demoToken };
-        }
-        return rejectWithValue('Backend server offline. Make sure http://localhost:5000 is running.');
+        return rejectWithValue('Backend server offline. Unable to connect to server.');
       }
       return rejectWithValue(err.response?.data?.message || err.message || 'Login failed');
     }
@@ -80,21 +67,6 @@ const authSlice = createSlice({
     },
     clearError: (state) => {
       state.error = null;
-    },
-    setDemoAuth: (state) => {
-      const demoUser: User = {
-        id: 1,
-        name: 'System Admin',
-        email: 'admin@gmail.com',
-        role: 'admin',
-      };
-      const demoToken = 'demo_jwt_token_admin_streamespn';
-      state.user = demoUser;
-      state.token = demoToken;
-      state.isAuthenticated = true;
-      state.error = null;
-      localStorage.setItem('token', demoToken);
-      localStorage.setItem('user', JSON.stringify(demoUser));
     },
   },
   extraReducers: (builder) => {
@@ -117,5 +89,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout, clearError, setDemoAuth } = authSlice.actions;
+export const { logout, clearError } = authSlice.actions;
 export default authSlice.reducer;
