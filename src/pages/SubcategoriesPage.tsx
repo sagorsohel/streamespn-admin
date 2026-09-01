@@ -21,7 +21,8 @@ import {
   CheckCircle2,
   XCircle,
   Filter,
-  Flame
+  Flame,
+  Zap
 } from 'lucide-react';
 
 export interface SportCategory {
@@ -39,6 +40,9 @@ export interface Subcategory {
   displayOrder: number;
   isCustomized: boolean;
   categoryName?: string;
+  matchCount?: number;
+  liveMatchCount?: number;
+  totalMatchCount?: number;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -50,8 +54,8 @@ export const SubcategoriesPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [syncing, setSyncing] = useState<boolean>(false);
 
-  // Status Filter Tab State ('all' | 'active' | 'inactive')
-  const [statusTab, setStatusTab] = useState<'all' | 'active' | 'inactive'>('all');
+  // Status Filter Tab State ('all' | 'active' | 'inactive' | 'trending')
+  const [statusTab, setStatusTab] = useState<'all' | 'active' | 'inactive' | 'trending'>('all');
 
   // Search & Pagination States
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -263,12 +267,14 @@ export const SubcategoriesPage: React.FC = () => {
   const totalCount = subcategories.length;
   const activeCount = subcategories.filter((s) => s.status).length;
   const inactiveCount = subcategories.filter((s) => !s.status).length;
+  const trendingCount = subcategories.filter((s) => s.isTrending || (s.matchCount && s.matchCount >= 10)).length;
 
   // Filter Subcategories by Status Tab & Search Term
   const filteredSubcategories = subcategories.filter((item) => {
     // 1. Status Filter Tab
     if (statusTab === 'active' && !item.status) return false;
     if (statusTab === 'inactive' && item.status) return false;
+    if (statusTab === 'trending' && !item.isTrending && !(item.matchCount && item.matchCount >= 10)) return false;
 
     // 2. Search Term Filter
     if (searchTerm.trim()) {
@@ -335,7 +341,7 @@ export const SubcategoriesPage: React.FC = () => {
           </div>
           <h1 className="text-xl font-extrabold text-white">Sports Subcategories & Leagues</h1>
           <p className="text-xs text-slate-400">
-            Manage subcategories for each sport (Soccer, Tennis, etc.), toggle ON / OFF status (default OFF), and sync from SportsDB.
+            Manage subcategories for each sport (Soccer, Tennis, etc.), toggle ON / OFF status, and pin or auto-feature trending leagues based on active matches.
           </p>
         </div>
 
@@ -359,7 +365,7 @@ export const SubcategoriesPage: React.FC = () => {
         </div>
       </div>
 
-      {/* STATUS FILTER TABS (All / Active (ON) / Inactive (OFF)) */}
+      {/* STATUS FILTER TABS (All / Active (ON) / Inactive (OFF) / Trending) */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between border-b border-slate-800 pb-3">
         <div className="flex items-center gap-2 overflow-x-auto">
           <button
@@ -410,6 +416,23 @@ export const SubcategoriesPage: React.FC = () => {
               statusTab === 'inactive' ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-400'
             }`}>
               {inactiveCount}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setStatusTab('trending')}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all ${
+              statusTab === 'trending'
+                ? 'bg-amber-500 text-black font-bold shadow-md shadow-amber-500/25'
+                : 'bg-slate-900 text-slate-400 border border-slate-800 hover:bg-slate-800 hover:text-amber-400'
+            }`}
+          >
+            <Flame className={`h-3.5 w-3.5 ${statusTab === 'trending' ? 'text-black fill-black' : 'text-amber-400'}`} />
+            <span>🔥 Trending / Features</span>
+            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+              statusTab === 'trending' ? 'bg-black/20 text-black' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+            }`}>
+              {trendingCount}
             </span>
           </button>
         </div>
@@ -500,7 +523,8 @@ export const SubcategoriesPage: React.FC = () => {
               <thead className="border-b border-slate-800 bg-slate-950/70 text-[11px] font-semibold text-slate-400 uppercase">
                 <tr>
                   <th className="py-3.5 px-4 text-center">ON / OFF Toggle</th>
-                  <th className="py-3.5 px-4 text-center">🔥 Trending</th>
+                  <th className="py-3.5 px-4 text-center">🔥 Trending / Featured</th>
+                  <th className="py-3.5 px-4">Active Matches</th>
                   <th className="py-3.5 px-4">Subcategory / League</th>
                   <th className="py-3.5 px-4">Parent Category</th>
                   <th className="py-3.5 px-4">Status</th>
@@ -537,18 +561,44 @@ export const SubcategoriesPage: React.FC = () => {
 
                     {/* Interactive Trending Toggle Switch */}
                     <td className="py-3 px-4 text-center">
-                      <button
-                        onClick={() => handleToggleTrending(subcat)}
-                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-all ${
-                          subcat.isTrending
-                            ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40 hover:bg-amber-500/30 shadow-sm'
-                            : 'bg-slate-800/80 text-slate-500 border border-slate-700/60 hover:bg-slate-700 hover:text-slate-300'
-                        }`}
-                        title="Click to toggle Trending status (Default OFF)"
-                      >
-                        <Flame className={`h-3.5 w-3.5 ${subcat.isTrending ? 'text-amber-400 fill-amber-400 animate-pulse' : 'text-slate-500'}`} />
-                        <span>{subcat.isTrending ? 'Trending' : 'Normal'}</span>
-                      </button>
+                      <div className="flex flex-col items-center gap-1">
+                        <button
+                          onClick={() => handleToggleTrending(subcat)}
+                          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-all ${
+                            subcat.isTrending
+                              ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40 hover:bg-amber-500/30 shadow-sm'
+                              : 'bg-slate-800/80 text-slate-500 border border-slate-700/60 hover:bg-slate-700 hover:text-slate-300'
+                          }`}
+                          title={subcat.isTrending ? 'Click to disable Manual Trending' : 'Click to force/pin as Manual Trending'}
+                        >
+                          <Flame className={`h-3.5 w-3.5 ${subcat.isTrending ? 'text-amber-400 fill-amber-400 animate-pulse' : 'text-slate-500'}`} />
+                          <span>{subcat.isTrending ? 'Manual 🔥' : 'Normal'}</span>
+                        </button>
+                        {Boolean(subcat.matchCount && subcat.matchCount >= 10) && !subcat.isTrending && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20" title="Automatically trending (10+ active matches)">
+                            ⚡ Auto ({subcat.matchCount} matches)
+                          </span>
+                        )}
+                      </div>
+                    </td>
+
+                    {/* Active Match Count Badge */}
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-2">
+                        {(subcat.matchCount || 0) > 0 ? (
+                          <span className="inline-flex items-center gap-1 rounded-md bg-indigo-500/10 px-2.5 py-1 text-xs font-bold text-indigo-300 border border-indigo-500/20">
+                            <Zap className="h-3.5 w-3.5 text-indigo-400" />
+                            {subcat.matchCount} {subcat.matchCount === 1 ? 'Match' : 'Matches'}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-slate-500 font-medium">0 matches</span>
+                        )}
+                        {Boolean(subcat.liveMatchCount && subcat.liveMatchCount > 0) && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-red-500/20 px-2 py-0.5 text-[10px] font-extrabold text-red-400 border border-red-500/30 animate-pulse">
+                            ● {subcat.liveMatchCount} LIVE
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     {/* Subcategory Name & Logo */}
