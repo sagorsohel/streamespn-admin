@@ -22,7 +22,9 @@ import {
   XCircle,
   Filter,
   Flame,
-  Zap
+  Zap,
+  Ban,
+  Power
 } from 'lucide-react';
 
 export interface SportCategory {
@@ -65,6 +67,12 @@ export const SubcategoriesPage: React.FC = () => {
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [editingSubcat, setEditingSubcat] = useState<Subcategory | null>(null);
+
+  // Quick Status Manager Modal States
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState<boolean>(false);
+  const [statusModalCategory, setStatusModalCategory] = useState<string>('all');
+  const [statusModalSearch, setStatusModalSearch] = useState<string>('');
+  const [bulkLoading, setBulkLoading] = useState<boolean>(false);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -130,9 +138,11 @@ export const SubcategoriesPage: React.FC = () => {
     try {
       const response = await api.patch(`/subcategories/${subcat.id}/toggle`);
       if (response.data?.success) {
-        toast.success(
-          `"${subcat.name}" is now ${newStatus ? 'ON (Active)' : 'OFF (Inactive)'}`
-        );
+        if (newStatus) {
+          toast.success(`"${subcat.name}" is now ENABLED (Active on website & sync)`);
+        } else {
+          toast.warning(`"${subcat.name}" is now DISABLED (Permanently removed from website & sync)`);
+        }
       }
     } catch (err: any) {
       // Rollback on error
@@ -140,6 +150,36 @@ export const SubcategoriesPage: React.FC = () => {
         prev.map((item) => (item.id === subcat.id ? { ...item, status: originalStatus } : item))
       );
       toast.error('Failed to toggle status.');
+    }
+  };
+
+  // Bulk Status Change for Category
+  const handleBulkStatusChange = async (targetStatus: boolean) => {
+    if (statusModalCategory === 'all') {
+      toast.error('Please select a specific sport category for bulk action.');
+      return;
+    }
+    const catObj = categories.find((c) => c.id === Number(statusModalCategory));
+    const confirmMsg = targetStatus
+      ? `Are you sure you want to ENABLE all subcategories for ${catObj?.sportName || 'this sport'}?`
+      : `Are you sure you want to DISABLE all subcategories for ${catObj?.sportName || 'this sport'}? Any existing matches for these subcategories will also be removed.`;
+
+    if (!window.confirm(confirmMsg)) return;
+
+    setBulkLoading(true);
+    try {
+      const response = await api.post('/subcategories/bulk-status', {
+        categoryId: Number(statusModalCategory),
+        status: targetStatus,
+      });
+      if (response.data?.success) {
+        toast.success(response.data.message);
+        fetchSubcategories();
+      }
+    } catch (err: any) {
+      toast.error('Failed to update bulk status.');
+    } finally {
+      setBulkLoading(false);
     }
   };
 
@@ -354,6 +394,18 @@ export const SubcategoriesPage: React.FC = () => {
           >
             <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
             <span>{syncing ? 'Syncing...' : 'Sync Subcategories'}</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setStatusModalCategory(selectedCategoryId);
+              setIsStatusModalOpen(true);
+            }}
+            className="flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-xs font-semibold text-amber-400 transition-all hover:bg-amber-500/20 shadow-sm cursor-pointer"
+            title="Open Quick Disable / Enable Manager"
+          >
+            <Power className="h-4 w-4 text-amber-400" />
+            <span>Disable / Enable Manager</span>
           </button>
 
           <button
@@ -643,6 +695,27 @@ export const SubcategoriesPage: React.FC = () => {
                     {/* Action Buttons */}
                     <td className="py-3 px-4 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        {/* Direct Disable / Enable Action Button */}
+                        {subcat.status ? (
+                          <button
+                            onClick={() => handleToggleStatus(subcat)}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/40 bg-rose-500/15 px-2.5 py-1.5 text-xs font-bold text-rose-400 hover:bg-rose-500/25 hover:border-rose-400 shadow-sm transition-all"
+                            title="Click to permanently Disable this subcategory"
+                          >
+                            <Ban className="h-3.5 w-3.5" />
+                            <span>Disable</span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleToggleStatus(subcat)}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/15 px-2.5 py-1.5 text-xs font-bold text-emerald-400 hover:bg-emerald-500/25 hover:border-emerald-400 shadow-sm transition-all"
+                            title="Click to Enable this subcategory"
+                          >
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            <span>Enable</span>
+                          </button>
+                        )}
+
                         <button
                           onClick={() => openEditModal(subcat)}
                           className="rounded-lg border border-slate-700 bg-slate-800/80 p-1.5 text-slate-300 hover:border-rose-500 hover:bg-rose-600 hover:text-white transition-all"
@@ -838,6 +911,156 @@ export const SubcategoriesPage: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* QUICK DISABLE / ENABLE MANAGER MODAL */}
+      {isStatusModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="w-full max-w-2xl rounded-2xl border border-slate-800 bg-slate-900 text-slate-100 p-6 shadow-2xl space-y-4 max-h-[85vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/30">
+                  <Power className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Subcategory Status Manager</h3>
+                  <p className="text-xs text-slate-400">Quickly enable or permanently disable subcategories</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsStatusModalOpen(false)}
+                className="rounded-lg p-1 text-slate-400 hover:bg-slate-800 hover:text-white"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {/* Filter controls */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 shrink-0">
+              <div>
+                <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">Filter Sport</label>
+                <select
+                  value={statusModalCategory}
+                  onChange={(e) => setStatusModalCategory(e.target.value)}
+                  className="h-9 w-full rounded-xl border border-slate-800 bg-slate-950 px-3 text-xs font-semibold text-slate-200 focus:border-amber-500 focus:outline-none"
+                >
+                  <option value="all">🌐 All Sports Categories</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      ⚽ {cat.sportName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block mb-1">Search League</label>
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-500" />
+                  <input
+                    type="text"
+                    value={statusModalSearch}
+                    onChange={(e) => setStatusModalSearch(e.target.value)}
+                    placeholder="Search league name..."
+                    className="h-9 w-full rounded-xl border border-slate-800 bg-slate-950 pl-8 pr-3 text-xs text-slate-200 placeholder-slate-500 focus:border-amber-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Bulk Action Buttons */}
+            {statusModalCategory !== 'all' && (
+              <div className="flex items-center justify-between bg-slate-950/70 p-3 rounded-xl border border-slate-800 text-xs shrink-0">
+                <span className="text-slate-300 font-medium">
+                  Bulk Action for <span className="font-bold text-white">{categories.find((c) => c.id === Number(statusModalCategory))?.sportName}</span>:
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleBulkStatusChange(true)}
+                    disabled={bulkLoading}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs font-bold text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-50 transition-all cursor-pointer"
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    <span>Enable All</span>
+                  </button>
+                  <button
+                    onClick={() => handleBulkStatusChange(false)}
+                    disabled={bulkLoading}
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-rose-500/40 bg-rose-500/10 px-3 py-1.5 text-xs font-bold text-rose-400 hover:bg-rose-500/20 disabled:opacity-50 transition-all cursor-pointer"
+                  >
+                    <Ban className="h-3.5 w-3.5" />
+                    <span>Disable All</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Quick List */}
+            <div className="flex-1 overflow-y-auto no-scrollbar space-y-2 pr-1 divide-y divide-slate-800/40">
+              {(() => {
+                const list = subcategories.filter((s) => {
+                  const matchCat = statusModalCategory === 'all' || s.categoryId === Number(statusModalCategory);
+                  const matchQuery = !statusModalSearch || s.name.toLowerCase().includes(statusModalSearch.toLowerCase());
+                  return matchCat && matchQuery;
+                });
+
+                if (list.length === 0) {
+                  return (
+                    <div className="p-8 text-center text-xs text-slate-500">
+                      No subcategories match your search.
+                    </div>
+                  );
+                }
+
+                return list.map((subcat) => (
+                  <div key={subcat.id} className="flex items-center justify-between py-2.5 px-2 hover:bg-slate-800/30 rounded-xl transition-colors">
+                    <div className="flex items-center gap-3 min-w-0 pr-3">
+                      {subcat.logoUrl ? (
+                        <img src={subcat.logoUrl} alt="" className="h-6 w-6 object-contain rounded shrink-0" />
+                      ) : (
+                        <div className="h-6 w-6 rounded bg-slate-800 flex items-center justify-center text-[10px] shrink-0">🏆</div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-white truncate">{subcat.name}</p>
+                        <p className="text-[10px] text-slate-400">{subcat.categoryName || 'Sport'}</p>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => handleToggleStatus(subcat)}
+                      className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-bold transition-all shrink-0 cursor-pointer ${
+                        subcat.status
+                          ? 'border border-rose-500/40 bg-rose-500/15 text-rose-400 hover:bg-rose-500/25'
+                          : 'border border-emerald-500/40 bg-emerald-500/15 text-emerald-400 hover:bg-emerald-500/25'
+                      }`}
+                    >
+                      {subcat.status ? (
+                        <>
+                          <Ban className="h-3.5 w-3.5" />
+                          <span>Disable</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          <span>Enable</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                ));
+              })()}
+            </div>
+
+            <div className="border-t border-slate-800 pt-3 flex justify-end shrink-0">
+              <button
+                onClick={() => setIsStatusModalOpen(false)}
+                className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2 text-xs font-semibold text-slate-300 hover:bg-slate-700 cursor-pointer"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
