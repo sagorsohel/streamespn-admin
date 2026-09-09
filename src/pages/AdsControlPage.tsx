@@ -13,7 +13,9 @@ import {
   Sparkles, 
   Activity, 
   Globe, 
-  FileCode
+  FileCode,
+  ToggleLeft,
+  ToggleRight
 } from 'lucide-react';
 
 export const AdsControlPage: React.FC = () => {
@@ -23,6 +25,7 @@ export const AdsControlPage: React.FC = () => {
 
   const [formData, setFormData] = useState({
     headAds: '',
+    isHeadAdsEnabled: true,
     navAds: '',
     modalSignupAds: '',
     footerAds: '',
@@ -42,6 +45,7 @@ export const AdsControlPage: React.FC = () => {
         const s = res.data.data.settings;
         setFormData({
           headAds: s.headAds || '',
+          isHeadAdsEnabled: s.isHeadAdsEnabled !== undefined ? Boolean(s.isHeadAdsEnabled) : true,
           navAds: s.navAds || '',
           modalSignupAds: s.modalSignupAds || '',
           footerAds: s.footerAds || '',
@@ -216,17 +220,48 @@ hs.src = ('//s10.histats.com/js15_as.js');
           <div className="space-y-6">
             {/* Head Ads Script */}
             <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 shadow-xl space-y-3 backdrop-blur-md">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <FileCode className="h-4 w-4 text-rose-400" />
-                    Header Script / Ads (Head Tag)
-                  </h3>
-                  <p className="text-xs text-slate-400">
-                    Injected into HTML <code className="text-rose-300 font-mono">&lt;head&gt;</code> tag (e.g. Adsterra script, Google AdSense, meta tags).
-                  </p>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  {/* ON / OFF Toggle Button */}
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, isHeadAdsEnabled: !formData.isHeadAdsEnabled })}
+                    className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-extrabold transition-all shrink-0 ${
+                      formData.isHeadAdsEnabled
+                        ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 shadow-lg shadow-emerald-500/10 hover:bg-emerald-500/30'
+                        : 'bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700'
+                    }`}
+                    title={
+                      formData.isHeadAdsEnabled
+                        ? 'Header Script is ON. Click to Turn OFF'
+                        : 'Header Script is OFF. Click to Turn ON'
+                    }
+                  >
+                    {formData.isHeadAdsEnabled ? (
+                      <>
+                        <ToggleRight className="h-4 w-4 text-emerald-400" />
+                        <span>ON</span>
+                      </>
+                    ) : (
+                      <>
+                        <ToggleLeft className="h-4 w-4 text-slate-500" />
+                        <span>OFF</span>
+                      </>
+                    )}
+                  </button>
+
+                  <div>
+                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                      <FileCode className="h-4 w-4 text-rose-400" />
+                      Header Script / Ads (Head Tag)
+                    </h3>
+                    <p className="text-xs text-slate-400">
+                      Injected into HTML <code className="text-rose-300 font-mono">&lt;head&gt;</code> tag (e.g. Adsterra script, Google AdSense, meta tags).
+                    </p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
+
+                <div className="flex items-center gap-2 shrink-0">
                   <button
                     type="button"
                     onClick={() => insertTemplate('headAds', 'script')}
@@ -243,12 +278,24 @@ hs.src = ('//s10.histats.com/js15_as.js');
                   </button>
                 </div>
               </div>
+
+              {!formData.isHeadAdsEnabled && (
+                <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-2.5 text-xs font-semibold text-amber-300 flex items-center gap-2">
+                  <span>⚠️</span>
+                  <span>Header Script is currently <strong>DISABLED (OFF)</strong>. Scripts will not run on the website until you turn this ON.</span>
+                </div>
+              )}
+
               <textarea
                 rows={6}
                 value={formData.headAds}
                 onChange={(e) => setFormData({ ...formData, headAds: e.target.value })}
                 placeholder="<script src='https://portfoliogunplayful.com/.../invoke.js'></script>"
-                className="w-full rounded-xl border border-slate-800 bg-slate-950 p-3.5 font-mono text-xs text-emerald-400 placeholder-slate-600 focus:border-rose-500 focus:outline-none"
+                className={`w-full rounded-xl border bg-slate-950 p-3.5 font-mono text-xs placeholder-slate-600 focus:outline-none transition-all ${
+                  formData.isHeadAdsEnabled
+                    ? 'border-slate-800 text-emerald-400 focus:border-rose-500'
+                    : 'border-slate-800/80 text-slate-500 opacity-60'
+                }`}
               />
             </div>
 
