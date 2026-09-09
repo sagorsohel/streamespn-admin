@@ -22,6 +22,7 @@ import {
   XCircle,
   Filter,
   Flame,
+  Star,
   Zap,
   Ban,
   Power
@@ -39,6 +40,7 @@ export interface Subcategory {
   logoUrl: string | null;
   status: boolean; // ON (true) or OFF (false)
   isTrending?: boolean; // Default false
+  isHomeBanner?: boolean; // Default false
   displayOrder: number;
   isCustomized: boolean;
   categoryName?: string;
@@ -56,8 +58,8 @@ export const SubcategoriesPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [syncing, setSyncing] = useState<boolean>(false);
 
-  // Status Filter Tab State ('all' | 'active' | 'inactive' | 'trending')
-  const [statusTab, setStatusTab] = useState<'all' | 'active' | 'inactive' | 'trending'>('all');
+  // Status Filter Tab State ('all' | 'active' | 'inactive' | 'trending' | 'banner')
+  const [statusTab, setStatusTab] = useState<'all' | 'active' | 'inactive' | 'trending' | 'banner'>('all');
 
   // Search & Pagination States
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -80,6 +82,7 @@ export const SubcategoriesPage: React.FC = () => {
     name: '',
     logoUrl: '',
     status: false, // Default OFF
+    isHomeBanner: false,
   });
 
   // Fetch Sports Categories for Filter & Dropdown
@@ -209,6 +212,32 @@ export const SubcategoriesPage: React.FC = () => {
     }
   };
 
+  // Toggle Home Banner Status (by default false)
+  const handleToggleHomeBanner = async (subcat: Subcategory) => {
+    const originalBanner = !!subcat.isHomeBanner;
+    const newBanner = !originalBanner;
+
+    // Optimistic UI update
+    setSubcategories((prev) =>
+      prev.map((item) => (item.id === subcat.id ? { ...item, isHomeBanner: newBanner } : item))
+    );
+
+    try {
+      const response = await api.patch(`/subcategories/${subcat.id}/toggle-banner`);
+      if (response.data?.success) {
+        toast.success(
+          `"${subcat.name}" home banner set to ${newBanner ? 'ON ⭐ (Shown in Home Banner Carousel)' : 'OFF (Normal)'}`
+        );
+      }
+    } catch (err: any) {
+      // Rollback on error
+      setSubcategories((prev) =>
+        prev.map((item) => (item.id === subcat.id ? { ...item, isHomeBanner: originalBanner } : item))
+      );
+      toast.error('Failed to toggle home banner status.');
+    }
+  };
+
   // Sync Subcategories / Leagues from TheSportsDB
   const handleSync = async () => {
     if (selectedCategoryId === 'all') {
@@ -246,6 +275,7 @@ export const SubcategoriesPage: React.FC = () => {
       name: '',
       logoUrl: '',
       status: false, // Default OFF
+      isHomeBanner: false,
     });
     setIsModalOpen(true);
   };
@@ -258,6 +288,7 @@ export const SubcategoriesPage: React.FC = () => {
       name: subcat.name || '',
       logoUrl: subcat.logoUrl || '',
       status: subcat.status,
+      isHomeBanner: !!subcat.isHomeBanner,
     });
     setIsModalOpen(true);
   };
@@ -279,7 +310,7 @@ export const SubcategoriesPage: React.FC = () => {
       } else {
         const res = await api.post('/subcategories', formData);
         if (res.data?.success) {
-          toast.success('Subcategory created successfully (Status: OFF)!');
+          toast.success('Subcategory created successfully!');
         }
       }
       setIsModalOpen(false);
@@ -308,6 +339,7 @@ export const SubcategoriesPage: React.FC = () => {
   const activeCount = subcategories.filter((s) => s.status).length;
   const inactiveCount = subcategories.filter((s) => !s.status).length;
   const trendingCount = subcategories.filter((s) => s.isTrending || (s.matchCount && s.matchCount >= 10)).length;
+  const bannerCount = subcategories.filter((s) => s.isHomeBanner).length;
 
   // Filter Subcategories by Status Tab & Search Term
   const filteredSubcategories = subcategories.filter((item) => {
@@ -315,6 +347,7 @@ export const SubcategoriesPage: React.FC = () => {
     if (statusTab === 'active' && !item.status) return false;
     if (statusTab === 'inactive' && item.status) return false;
     if (statusTab === 'trending' && !item.isTrending && !(item.matchCount && item.matchCount >= 10)) return false;
+    if (statusTab === 'banner' && !item.isHomeBanner) return false;
 
     // 2. Search Term Filter
     if (searchTerm.trim()) {
@@ -480,11 +513,28 @@ export const SubcategoriesPage: React.FC = () => {
             }`}
           >
             <Flame className={`h-3.5 w-3.5 ${statusTab === 'trending' ? 'text-black fill-black' : 'text-amber-400'}`} />
-            <span>🔥 Trending / Features</span>
+            <span>🔥 Trending</span>
             <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
               statusTab === 'trending' ? 'bg-black/20 text-black' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
             }`}>
               {trendingCount}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setStatusTab('banner')}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all ${
+              statusTab === 'banner'
+                ? 'bg-amber-400 text-slate-950 font-extrabold shadow-md shadow-amber-400/30 ring-1 ring-amber-300'
+                : 'bg-slate-900 text-slate-400 border border-slate-800 hover:bg-slate-800 hover:text-amber-300'
+            }`}
+          >
+            <Star className={`h-3.5 w-3.5 ${statusTab === 'banner' ? 'text-slate-950 fill-slate-950' : 'text-amber-400 fill-amber-400'}`} />
+            <span>⭐ Home Banner Active</span>
+            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+              statusTab === 'banner' ? 'bg-black/25 text-slate-950' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+            }`}>
+              {bannerCount}
             </span>
           </button>
         </div>
@@ -576,6 +626,7 @@ export const SubcategoriesPage: React.FC = () => {
                 <tr>
                   <th className="py-3.5 px-4 text-center">ON / OFF Toggle</th>
                   <th className="py-3.5 px-4 text-center">🔥 Trending / Featured</th>
+                  <th className="py-3.5 px-4 text-center">⭐ Home Banner</th>
                   <th className="py-3.5 px-4">Active Matches</th>
                   <th className="py-3.5 px-4">Subcategory / League</th>
                   <th className="py-3.5 px-4">Parent Category</th>
@@ -632,6 +683,36 @@ export const SubcategoriesPage: React.FC = () => {
                           </span>
                         )}
                       </div>
+                    </td>
+
+                    {/* Interactive Home Banner Toggle Switch */}
+                    <td className="py-3 px-4 text-center">
+                      <button
+                        onClick={() => handleToggleHomeBanner(subcat)}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-extrabold transition-all ${
+                          subcat.isHomeBanner
+                            ? 'bg-amber-500/25 text-amber-300 border border-amber-400/60 shadow-lg shadow-amber-500/20 hover:bg-amber-500/35 ring-1 ring-amber-400/40'
+                            : 'bg-slate-800/80 text-slate-400 border border-slate-700/60 hover:bg-slate-700 hover:text-slate-200'
+                        }`}
+                        title={
+                          subcat.isHomeBanner
+                            ? 'Home Banner ON: Click to turn OFF'
+                            : 'Home Banner OFF: Click to turn ON and show in Home Page Carousel'
+                        }
+                      >
+                        {subcat.isHomeBanner ? (
+                          <>
+                            <ToggleRight className="h-4 w-4 text-amber-400" />
+                            <Star className="h-3.5 w-3.5 text-amber-400 fill-amber-400" />
+                            <span>BANNER ON</span>
+                          </>
+                        ) : (
+                          <>
+                            <ToggleLeft className="h-4 w-4 text-slate-500" />
+                            <span>BANNER OFF</span>
+                          </>
+                        )}
+                      </button>
                     </td>
 
                     {/* Active Match Count Badge */}
@@ -892,6 +973,40 @@ export const SubcategoriesPage: React.FC = () => {
                     <span className="text-emerald-400 font-semibold">ON (Active)</span>
                   </label>
                 </div>
+              </div>
+
+              {/* Home Banner Carousel Option */}
+              <div className="flex items-center justify-between rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-400">
+                    <Star className="h-3.5 w-3.5 fill-amber-400" />
+                    <span>Show in Home Banner Carousel</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    Matches from this league will be featured on the main homepage top carousel
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, isHomeBanner: !formData.isHomeBanner })}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-all ${
+                    formData.isHomeBanner
+                      ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50 hover:bg-amber-500/30'
+                      : 'bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700'
+                  }`}
+                >
+                  {formData.isHomeBanner ? (
+                    <>
+                      <ToggleRight className="h-4 w-4 text-amber-400" />
+                      <span>ON</span>
+                    </>
+                  ) : (
+                    <>
+                      <ToggleLeft className="h-4 w-4 text-slate-500" />
+                      <span>OFF</span>
+                    </>
+                  )}
+                </button>
               </div>
 
               {/* Submit Buttons */}
