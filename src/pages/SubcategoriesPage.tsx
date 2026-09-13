@@ -25,7 +25,9 @@ import {
   Star,
   Zap,
   Ban,
-  Power
+  Power,
+  Home,
+  Link as LinkIcon
 } from 'lucide-react';
 
 export interface SportCategory {
@@ -41,6 +43,8 @@ export interface Subcategory {
   status: boolean; // ON (true) or OFF (false)
   isTrending?: boolean; // Default false
   isHomeBanner?: boolean; // Default false
+  showOnHome?: boolean; // Default true (Home ON)
+  referralLink?: string | null;
   displayOrder: number;
   isCustomized: boolean;
   categoryName?: string;
@@ -58,8 +62,8 @@ export const SubcategoriesPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [syncing, setSyncing] = useState<boolean>(false);
 
-  // Status Filter Tab State ('all' | 'active' | 'inactive' | 'trending' | 'banner')
-  const [statusTab, setStatusTab] = useState<'all' | 'active' | 'inactive' | 'trending' | 'banner'>('all');
+  // Status Filter Tab State ('all' | 'active' | 'inactive' | 'trending' | 'banner' | 'home_off')
+  const [statusTab, setStatusTab] = useState<'all' | 'active' | 'inactive' | 'trending' | 'banner' | 'home_off'>('all');
 
   // Search & Pagination States
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -83,6 +87,8 @@ export const SubcategoriesPage: React.FC = () => {
     logoUrl: '',
     status: false, // Default OFF
     isHomeBanner: false,
+    showOnHome: true, // Default ON (true)
+    referralLink: '',
   });
 
   // Fetch Sports Categories for Filter & Dropdown
@@ -238,6 +244,32 @@ export const SubcategoriesPage: React.FC = () => {
     }
   };
 
+  // Toggle Home Visibility Status (showOnHome: by default true / ON)
+  const handleToggleHomeVisibility = async (subcat: Subcategory) => {
+    const originalShowOnHome = subcat.showOnHome !== false; // true unless explicitly false
+    const newShowOnHome = !originalShowOnHome;
+
+    // Optimistic UI update
+    setSubcategories((prev) =>
+      prev.map((item) => (item.id === subcat.id ? { ...item, showOnHome: newShowOnHome } : item))
+    );
+
+    try {
+      const response = await api.patch(`/subcategories/${subcat.id}/toggle-home`);
+      if (response.data?.success) {
+        toast.success(
+          `"${subcat.name}" homepage events visibility set to ${newShowOnHome ? 'ON 🏠 (Shown on Homepage)' : 'OFF (Hidden from Homepage)'}`
+        );
+      }
+    } catch (err: any) {
+      // Rollback on error
+      setSubcategories((prev) =>
+        prev.map((item) => (item.id === subcat.id ? { ...item, showOnHome: originalShowOnHome } : item))
+      );
+      toast.error('Failed to toggle homepage visibility.');
+    }
+  };
+
   // Sync Subcategories / Leagues from TheSportsDB
   const handleSync = async () => {
     if (selectedCategoryId === 'all') {
@@ -276,6 +308,8 @@ export const SubcategoriesPage: React.FC = () => {
       logoUrl: '',
       status: false, // Default OFF
       isHomeBanner: false,
+      showOnHome: true, // Default ON
+      referralLink: '',
     });
     setIsModalOpen(true);
   };
@@ -289,6 +323,8 @@ export const SubcategoriesPage: React.FC = () => {
       logoUrl: subcat.logoUrl || '',
       status: subcat.status,
       isHomeBanner: !!subcat.isHomeBanner,
+      showOnHome: subcat.showOnHome !== false, // default true
+      referralLink: subcat.referralLink || '',
     });
     setIsModalOpen(true);
   };
@@ -340,6 +376,7 @@ export const SubcategoriesPage: React.FC = () => {
   const inactiveCount = subcategories.filter((s) => !s.status).length;
   const trendingCount = subcategories.filter((s) => s.isTrending || (s.matchCount && s.matchCount >= 10)).length;
   const bannerCount = subcategories.filter((s) => s.isHomeBanner).length;
+  const homeOffCount = subcategories.filter((s) => s.showOnHome === false).length;
 
   // Filter Subcategories by Status Tab & Search Term
   const filteredSubcategories = subcategories.filter((item) => {
@@ -348,6 +385,7 @@ export const SubcategoriesPage: React.FC = () => {
     if (statusTab === 'inactive' && item.status) return false;
     if (statusTab === 'trending' && !item.isTrending && !(item.matchCount && item.matchCount >= 10)) return false;
     if (statusTab === 'banner' && !item.isHomeBanner) return false;
+    if (statusTab === 'home_off' && item.showOnHome !== false) return false;
 
     // 2. Search Term Filter
     if (searchTerm.trim()) {
@@ -537,6 +575,23 @@ export const SubcategoriesPage: React.FC = () => {
               {bannerCount}
             </span>
           </button>
+
+          <button
+            onClick={() => setStatusTab('home_off')}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition-all ${
+              statusTab === 'home_off'
+                ? 'bg-rose-500 text-white font-extrabold shadow-md shadow-rose-500/30'
+                : 'bg-slate-900 text-slate-400 border border-slate-800 hover:bg-slate-800 hover:text-rose-400'
+            }`}
+          >
+            <Home className="h-3.5 w-3.5 text-rose-400" />
+            <span>🏠 Home Hidden</span>
+            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+              statusTab === 'home_off' ? 'bg-white/20 text-white' : 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
+            }`}>
+              {homeOffCount}
+            </span>
+          </button>
         </div>
 
         {/* Page Size Selector & Counters */}
@@ -625,6 +680,7 @@ export const SubcategoriesPage: React.FC = () => {
               <thead className="border-b border-slate-800 bg-slate-950/70 text-[11px] font-semibold text-slate-400 uppercase">
                 <tr>
                   <th className="py-3.5 px-4 text-center">ON / OFF Toggle</th>
+                  <th className="py-3.5 px-4 text-center">🏠 Home ON/OFF</th>
                   <th className="py-3.5 px-4 text-center">🔥 Trending / Featured</th>
                   <th className="py-3.5 px-4 text-center">⭐ Home Banner</th>
                   <th className="py-3.5 px-4">Active Matches</th>
@@ -657,6 +713,35 @@ export const SubcategoriesPage: React.FC = () => {
                           <>
                             <ToggleLeft className="h-4 w-4 text-slate-500" />
                             <span>OFF</span>
+                          </>
+                        )}
+                      </button>
+                    </td>
+
+                    {/* Interactive Home Visibility (showOnHome) Toggle Switch */}
+                    <td className="py-3 px-4 text-center">
+                      <button
+                        onClick={() => handleToggleHomeVisibility(subcat)}
+                        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-all ${
+                          subcat.showOnHome !== false
+                            ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 hover:bg-cyan-500/30 shadow-sm'
+                            : 'bg-rose-500/15 text-rose-400 border border-rose-500/30 hover:bg-rose-500/25'
+                        }`}
+                        title={
+                          subcat.showOnHome !== false
+                            ? 'Home ON: Events will appear on homepage. Click to turn OFF (Hide from homepage)'
+                            : 'Home OFF: Events are hidden from homepage. Click to turn ON (Show on homepage)'
+                        }
+                      >
+                        {subcat.showOnHome !== false ? (
+                          <>
+                            <ToggleRight className="h-4 w-4 text-cyan-400" />
+                            <span>HOME ON</span>
+                          </>
+                        ) : (
+                          <>
+                            <ToggleLeft className="h-4 w-4 text-rose-400" />
+                            <span>HOME OFF</span>
                           </>
                         )}
                       </button>
@@ -748,7 +833,17 @@ export const SubcategoriesPage: React.FC = () => {
                             <Tag className="h-4 w-4" />
                           </div>
                         )}
-                        <span className="font-bold text-white text-sm">{subcat.name}</span>
+                        <div className="min-w-0">
+                          <span className="font-bold text-white text-sm block">{subcat.name}</span>
+                          {subcat.referralLink && (
+                            <div className="flex items-center gap-1 mt-0.5" title={`Referral Link: ${subcat.referralLink}`}>
+                              <span className="inline-flex items-center gap-1 text-[10px] text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/20 font-mono truncate max-w-[200px]">
+                                <LinkIcon className="h-2.5 w-2.5 shrink-0" />
+                                {subcat.referralLink}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </td>
 
@@ -1007,6 +1102,58 @@ export const SubcategoriesPage: React.FC = () => {
                     </>
                   )}
                 </button>
+              </div>
+
+              {/* Show Events on Homepage (Home ON / OFF) */}
+              <div className="flex items-center justify-between rounded-xl border border-cyan-500/20 bg-cyan-500/5 p-3">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-cyan-400">
+                    <Home className="h-3.5 w-3.5" />
+                    <span>Show Events on Homepage (Home ON / OFF)</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    When ON (default), events of this league appear on the homepage. When OFF, they are hidden from homepage.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, showOnHome: !formData.showOnHome })}
+                  className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold transition-all ${
+                    formData.showOnHome
+                      ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50 hover:bg-cyan-500/30'
+                      : 'bg-rose-500/15 text-rose-400 border border-rose-500/30 hover:bg-rose-500/25'
+                  }`}
+                >
+                  {formData.showOnHome ? (
+                    <>
+                      <ToggleRight className="h-4 w-4 text-cyan-400" />
+                      <span>ON</span>
+                    </>
+                  ) : (
+                    <>
+                      <ToggleLeft className="h-4 w-4 text-rose-400" />
+                      <span>OFF</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Subcategory Referral Link */}
+              <div className="space-y-1">
+                <div className="flex items-center justify-between">
+                  <label className="font-semibold text-slate-300">Subcategory Referral Link (Affiliate / Signup)</label>
+                  <span className="text-[10px] text-emerald-400 font-mono">Protected against sync</span>
+                </div>
+                <input
+                  type="url"
+                  value={formData.referralLink}
+                  onChange={(e) => setFormData({ ...formData, referralLink: e.target.value })}
+                  placeholder="https://example.com/affiliate-link"
+                  className="h-10 w-full rounded-xl border border-slate-800 bg-slate-950 px-3 text-slate-100 placeholder-slate-600 focus:border-rose-500 focus:outline-none"
+                />
+                <p className="text-[11px] text-slate-500">
+                  Used on match stream pages if the specific event does not have its own custom referral link.
+                </p>
               </div>
 
               {/* Submit Buttons */}
