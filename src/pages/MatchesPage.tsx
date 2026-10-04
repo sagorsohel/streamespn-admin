@@ -274,6 +274,25 @@ export const MatchesPage: React.FC = () => {
     }
   };
 
+  // Sync China Open Tennis Matches (Google / Live Scoreboard)
+  const [syncingChinaOpen, setSyncingChinaOpen] = useState<boolean>(false);
+  const handleChinaOpenSync = async () => {
+    setSyncingChinaOpen(true);
+    const toastId = toast.loading('Syncing China Open tennis matches & real-time scores...');
+
+    try {
+      const response = await api.post('/matches/sync-china-open');
+      if (response.data?.success) {
+        toast.success(response.data.message || 'China Open matches synced successfully!', { id: toastId });
+        fetchMatches();
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Sync failed. Ensure backend is running.', { id: toastId });
+    } finally {
+      setSyncingChinaOpen(false);
+    }
+  };
+
   // Open Create Modal
   const openCreateModal = () => {
     setEditingMatch(null);
@@ -729,6 +748,16 @@ export const MatchesPage: React.FC = () => {
           >
             <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
             <span>{syncing ? 'Syncing...' : 'Sync Matches (Today & Tomorrow)'}</span>
+          </button>
+
+          <button
+            onClick={handleChinaOpenSync}
+            disabled={syncingChinaOpen}
+            className="flex items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2.5 text-xs font-semibold text-amber-400 transition-all hover:bg-amber-500/20 disabled:opacity-50"
+            title="Update China Open tennis live scores and daily matches"
+          >
+            <RefreshCw className={`h-4 w-4 ${syncingChinaOpen ? 'animate-spin' : ''}`} />
+            <span>{syncingChinaOpen ? 'Syncing Tennis...' : 'Sync China Open'}</span>
           </button>
 
           <button
