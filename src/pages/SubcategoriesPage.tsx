@@ -579,12 +579,14 @@ export const SubcategoriesPage: React.FC = () => {
     return Date.now() - createdTime <= 72 * 60 * 60 * 1000;
   };
 
+  const CORE_TRENDING_IDS = new Set([1, 3, 126, 5, 524, 7, 12]);
+
   // Status Tab Counts
   const totalCount = subcategories.length;
   const newCount = subcategories.filter(isNewSubcat).length;
   const activeCount = subcategories.filter((s) => s.status).length;
   const inactiveCount = subcategories.filter((s) => !s.status).length;
-  const trendingCount = subcategories.filter((s) => s.isTrending || (s.matchCount && s.matchCount >= 10)).length;
+  const trendingCount = subcategories.filter((s) => s.isTrending || CORE_TRENDING_IDS.has(s.id)).length;
   const bannerCount = subcategories.filter((s) => s.isHomeBanner).length;
   const homeOffCount = subcategories.filter((s) => s.showOnHome === false).length;
 
@@ -594,7 +596,7 @@ export const SubcategoriesPage: React.FC = () => {
     if (statusTab === 'new' && !isNewSubcat(item)) return false;
     if (statusTab === 'active' && !item.status) return false;
     if (statusTab === 'inactive' && item.status) return false;
-    if (statusTab === 'trending' && !item.isTrending && !(item.matchCount && item.matchCount >= 10)) return false;
+    if (statusTab === 'trending' && !item.isTrending && !CORE_TRENDING_IDS.has(item.id)) return false;
     if (statusTab === 'banner' && !item.isHomeBanner) return false;
     if (statusTab === 'home_off' && item.showOnHome !== false) return false;
 
@@ -1532,24 +1534,21 @@ export const SubcategoriesPage: React.FC = () => {
                         <button
                           onClick={() => handleToggleTrending(subcat)}
                           className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-all cursor-pointer ${
-                            subcat.isTrending
+                            subcat.isTrending || CORE_TRENDING_IDS.has(subcat.id)
                               ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 shadow-sm'
                               : 'bg-slate-800/80 text-slate-400 border border-slate-700/60 hover:bg-slate-700 hover:text-slate-300'
                           }`}
-                          title={subcat.isTrending ? 'Manual Trending active (Click to disable)' : 'Click to pin as Trending'}
+                          title={
+                            CORE_TRENDING_IDS.has(subcat.id)
+                              ? 'Permanent Core Trending League (All-time Home Trending - Click to toggle)'
+                              : subcat.isTrending
+                              ? 'Trending active (Click to disable)'
+                              : 'Click to turn ON as Trending'
+                          }
                         >
-                          <Flame className={`h-3 w-3 shrink-0 ${subcat.isTrending ? 'text-amber-400 fill-amber-400 animate-pulse' : 'text-slate-500'}`} />
-                          <span>{subcat.isTrending ? 'Trending' : 'Off'}</span>
+                          <Flame className={`h-3 w-3 shrink-0 ${subcat.isTrending || CORE_TRENDING_IDS.has(subcat.id) ? 'text-amber-400 fill-amber-400 animate-pulse' : 'text-slate-500'}`} />
+                          <span>{CORE_TRENDING_IDS.has(subcat.id) ? 'Core Trending' : subcat.isTrending ? 'Trending' : 'Off'}</span>
                         </button>
-                        {Boolean(subcat.matchCount && subcat.matchCount >= 10) && !subcat.isTrending && (
-                          <span
-                            className="inline-flex items-center gap-0.5 text-[10px] font-medium text-emerald-400 bg-emerald-500/10 px-1.5 py-0.2 rounded-full border border-emerald-500/20"
-                            title="Auto Trending (10+ active matches)"
-                          >
-                            <Zap className="h-2.5 w-2.5 shrink-0" />
-                            Auto
-                          </span>
-                        )}
                       </div>
                     </td>
 
