@@ -579,14 +579,25 @@ export const SubcategoriesPage: React.FC = () => {
     return Date.now() - createdTime <= 72 * 60 * 60 * 1000;
   };
 
-  const CORE_TRENDING_IDS = new Set([1, 3, 126, 5, 524, 7, 12]);
+  const isCoreLeague = (name?: string) => {
+    const n = name?.toLowerCase().trim() || '';
+    return (
+      n === 'english premier league' || n === 'premier league' ||
+      n === 'spanish la liga' || n === 'spanish laliga' || n === 'la liga' || n === 'laliga' ||
+      n === 'french ligue 1' || n === 'ligue 1' ||
+      n === 'german bundesliga' || n === 'bundesliga' ||
+      n === 'boxing' ||
+      n === 'nfl' ||
+      n === 'ncaa' || n === 'ncaa division 1 football'
+    );
+  };
 
   // Status Tab Counts
   const totalCount = subcategories.length;
   const newCount = subcategories.filter(isNewSubcat).length;
   const activeCount = subcategories.filter((s) => s.status).length;
   const inactiveCount = subcategories.filter((s) => !s.status).length;
-  const trendingCount = subcategories.filter((s) => s.isTrending || CORE_TRENDING_IDS.has(s.id)).length;
+  const trendingCount = subcategories.filter((s) => s.isTrending).length;
   const bannerCount = subcategories.filter((s) => s.isHomeBanner).length;
   const homeOffCount = subcategories.filter((s) => s.showOnHome === false).length;
 
@@ -596,7 +607,7 @@ export const SubcategoriesPage: React.FC = () => {
     if (statusTab === 'new' && !isNewSubcat(item)) return false;
     if (statusTab === 'active' && !item.status) return false;
     if (statusTab === 'inactive' && item.status) return false;
-    if (statusTab === 'trending' && !item.isTrending && !CORE_TRENDING_IDS.has(item.id)) return false;
+    if (statusTab === 'trending' && !item.isTrending) return false;
     if (statusTab === 'banner' && !item.isHomeBanner) return false;
     if (statusTab === 'home_off' && item.showOnHome !== false) return false;
 
@@ -1534,20 +1545,18 @@ export const SubcategoriesPage: React.FC = () => {
                         <button
                           onClick={() => handleToggleTrending(subcat)}
                           className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-all cursor-pointer ${
-                            subcat.isTrending || CORE_TRENDING_IDS.has(subcat.id)
+                            subcat.isTrending
                               ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30 shadow-sm'
                               : 'bg-slate-800/80 text-slate-400 border border-slate-700/60 hover:bg-slate-700 hover:text-slate-300'
                           }`}
                           title={
-                            CORE_TRENDING_IDS.has(subcat.id)
-                              ? 'Permanent Core Trending League (All-time Home Trending - Click to toggle)'
-                              : subcat.isTrending
-                              ? 'Trending active (Click to disable)'
+                            subcat.isTrending
+                              ? `${isCoreLeague(subcat.name) ? 'Core Trending League' : 'Trending League'} active (Click to turn OFF)`
                               : 'Click to turn ON as Trending'
                           }
                         >
-                          <Flame className={`h-3 w-3 shrink-0 ${subcat.isTrending || CORE_TRENDING_IDS.has(subcat.id) ? 'text-amber-400 fill-amber-400 animate-pulse' : 'text-slate-500'}`} />
-                          <span>{CORE_TRENDING_IDS.has(subcat.id) ? 'Core Trending' : subcat.isTrending ? 'Trending' : 'Off'}</span>
+                          <Flame className={`h-3 w-3 shrink-0 ${subcat.isTrending ? 'text-amber-400 fill-amber-400 animate-pulse' : 'text-slate-500'}`} />
+                          <span>{subcat.isTrending ? (isCoreLeague(subcat.name) ? 'Core Trending' : 'Trending') : 'Off'}</span>
                         </button>
                       </div>
                     </td>
