@@ -202,7 +202,7 @@ export const AdsControlPage: React.FC = () => {
   };
 
   // Quick Template Inserters
-  const insertTemplate = (field: keyof typeof formData, type: 'script' | 'atOptions' | 'histats' | 'iframe') => {
+  const insertTemplate = (field: keyof typeof formData, type: 'script' | 'atOptions' | 'histats' | 'iframe' | 'adsense') => {
     let sample = '';
     if (type === 'script') {
       sample = `<script src="https://portfoliogunplayful.com/4b/be/20/4bbe20b71394bddde225602b1670a27d.js"></script>`;
@@ -232,6 +232,16 @@ hs.src = ('//s10.histats.com/js15_as.js');
 <!-- Histats.com  END  -->`;
     } else if (type === 'iframe') {
       sample = `<iframe src="https://streamespn.com/ad-banner" width="100%" height="90" frameborder="0" scrolling="no"></iframe>`;
+    } else if (type === 'adsense') {
+      sample = `<ins class="adsbygoogle"
+     style="display:block"
+     data-ad-client="ca-pub-9896387565016359"
+     data-ad-slot="3694761365"
+     data-ad-format="auto"
+     data-full-width-responsive="true"></ins>
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({});
+</script>`;
     }
 
     setFormData((prev) => ({
@@ -563,31 +573,31 @@ hs.src = ('//s10.histats.com/js15_as.js');
               />
             </div>
 
-            {/* Footer Ad Code */}
-            <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 shadow-xl space-y-3 backdrop-blur-md">
-              <div className="flex items-center justify-between">
+            {/* Top Banner Ad Code (Home Above Trending & Single Match Above Player) */}
+            <div className="rounded-2xl border border-rose-500/40 bg-slate-900/90 p-5 shadow-xl space-y-3 backdrop-blur-md">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <div>
                   <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                    <Layout className="h-4 w-4 text-indigo-400" />
-                    Footer Ad Code
+                    <Layout className="h-4 w-4 text-rose-400" />
+                    Top Banner Ad (Home Above Trending & Single Match Above Player)
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Ad banner code displayed above or inside website footer.
+                    Banner ad code displayed on the Home page (above Trending) and on Single Match view (above the Video Player). Supports Google AdSense & HTML/JS banners.
                   </p>
                 </div>
                 <button
                   type="button"
-                  onClick={() => insertTemplate('footerAds', 'iframe')}
-                  className="text-[11px] font-mono bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition-all"
+                  onClick={() => insertTemplate('footerAds', 'adsense')}
+                  className="text-[11px] font-mono bg-rose-950/70 hover:bg-rose-900/90 text-rose-300 px-3 py-1.5 rounded-lg border border-rose-700/60 transition-all cursor-pointer shrink-0 self-start sm:self-auto"
                 >
-                  + Insert Iframe Code
+                  + Insert AdSense Code
                 </button>
               </div>
               <textarea
-                rows={5}
+                rows={6}
                 value={formData.footerAds}
                 onChange={(e) => setFormData({ ...formData, footerAds: e.target.value })}
-                placeholder="Paste footer ad code..."
+                placeholder="Paste Google AdSense (<ins class='adsbygoogle' ...></ins>) or banner ad code..."
                 className="w-full rounded-xl border border-slate-800 bg-slate-950 p-3.5 font-mono text-xs text-emerald-400 placeholder-slate-600 focus:border-rose-500 focus:outline-none"
               />
             </div>
