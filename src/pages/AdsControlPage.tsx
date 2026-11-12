@@ -202,7 +202,7 @@ export const AdsControlPage: React.FC = () => {
   };
 
   // Quick Template Inserters
-  const insertTemplate = (field: keyof typeof formData, type: 'script' | 'atOptions' | 'histats' | 'iframe' | 'adsense') => {
+  const insertTemplate = (field: keyof typeof formData, type: 'script' | 'atOptions' | 'histats' | 'iframe' | 'adsense' | 'html') => {
     let sample = '';
     if (type === 'script') {
       sample = `<script src="https://portfoliogunplayful.com/4b/be/20/4bbe20b71394bddde225602b1670a27d.js"></script>`;
@@ -242,6 +242,10 @@ hs.src = ('//s10.histats.com/js15_as.js');
 <script>
      (adsbygoogle = window.adsbygoogle || []).push({});
 </script>`;
+    } else if (type === 'html') {
+      sample = `<a href="https://trusthubmedia.com/app/aff/go/1xl-DJTBpEEB2J?i=1" target="_blank" rel="noopener noreferrer" style="display:inline-block;max-width:100%;">
+  <img src="https://image.streamespn.org/uploads/1789310276645-54181463.webp" alt="Sponsor Banner" style="max-width:100%;height:auto;border-radius:12px;" />
+</a>`;
     }
 
     setFormData((prev) => ({
@@ -585,13 +589,22 @@ hs.src = ('//s10.histats.com/js15_as.js');
                     Banner ad code displayed on the Home page (above Trending) and on Single Match view (above the Video Player). Supports Google AdSense & HTML/JS banners.
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => insertTemplate('footerAds', 'adsense')}
-                  className="text-[11px] font-mono bg-rose-950/70 hover:bg-rose-900/90 text-rose-300 px-3 py-1.5 rounded-lg border border-rose-700/60 transition-all cursor-pointer shrink-0 self-start sm:self-auto"
-                >
-                  + Insert AdSense Code
-                </button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => insertTemplate('footerAds', 'html')}
+                    className="text-[11px] font-mono bg-emerald-950/70 hover:bg-emerald-900/90 text-emerald-300 px-3 py-1.5 rounded-lg border border-emerald-700/60 transition-all cursor-pointer shrink-0"
+                  >
+                    + Insert HTML / Image Banner
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => insertTemplate('footerAds', 'adsense')}
+                    className="text-[11px] font-mono bg-rose-950/70 hover:bg-rose-900/90 text-rose-300 px-3 py-1.5 rounded-lg border border-rose-700/60 transition-all cursor-pointer shrink-0"
+                  >
+                    + Insert AdSense Code
+                  </button>
+                </div>
               </div>
               <textarea
                 rows={6}
