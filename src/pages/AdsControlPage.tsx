@@ -661,18 +661,11 @@ hs.src = ('//s10.histats.com/js15_as.js');
                     Match List Ad (Below "UPCOMING" / "More Events" Title, Above Match Cards)
                   </h3>
                   <p className="text-xs text-slate-400">
-                    Shown on Home & Category pages under the UPCOMING heading, and on Single Match pages under More Events. Supports Google AdSense (in-article) & any script/HTML. Leave empty to use the built-in Google in-article ad. Turn OFF to hide.
+                    Built-in Google AdSense in-article ad (code is hard-coded in the website). Shown on Home & Category pages under the UPCOMING heading, and on Single Match pages under More Events. Just turn it ON or OFF here.
                   </p>
                 </div>
                 <AdToggle field="isMatchListAdsEnabled" />
               </div>
-              <textarea
-                rows={6}
-                value={formData.matchListAds}
-                onChange={(e) => setFormData({ ...formData, matchListAds: e.target.value })}
-                placeholder="Paste Google AdSense in-article code or any ad script/HTML (empty = built-in Google in-article ad)..."
-                className="w-full rounded-xl border border-slate-800 bg-slate-950 p-3.5 font-mono text-xs text-emerald-400 placeholder-slate-600 focus:border-rose-500 focus:outline-none"
-              />
             </div>
 
             {/* Modal Signup / Pop-up Ad Code */}
