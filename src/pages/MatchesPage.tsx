@@ -38,6 +38,26 @@ import {
 const SITE_URL = (import.meta.env.VITE_SITE_URL || 'https://streamespn.com').replace(/\/$/, '');
 
 // Slug generator helper
+// Admin enters match time in Bangladesh time (BDT, UTC+6, 24-hour). It is stored as UTC.
+const BDT_OFFSET_MS = 6 * 60 * 60 * 1000;
+
+// "YYYY-MM-DDTHH:mm" (BDT wall-clock) -> UTC ISO string
+const bdtInputToUtcIso = (value: string): string => {
+  const [datePart = '', timePart = '00:00'] = value.split('T');
+  const [y, mo, d] = datePart.split('-').map(Number);
+  const [h, mi] = timePart.split(':').map(Number);
+  if (!y || !mo || !d) return value;
+  return new Date(Date.UTC(y, mo - 1, d, h || 0, mi || 0) - BDT_OFFSET_MS).toISOString();
+};
+
+// UTC date/ISO -> "YYYY-MM-DDTHH:mm" (BDT wall-clock)
+const utcToBdtInput = (value: string | Date): string => {
+  const t = new Date(value).getTime();
+  if (isNaN(t)) return '';
+  return new Date(t + BDT_OFFSET_MS).toISOString().slice(0, 16);
+};
+
+
 const slugify = (text: string) => {
   if (!text) return '';
   return text
@@ -165,6 +185,7 @@ export const MatchesPage: React.FC = () => {
 
   // Modal States
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
+  const [timeText, setTimeText] = useState<string>('');
   const [editingMatch, setEditingMatch] = useState<MatchItem | null>(null);
 
   // Form State
@@ -182,7 +203,7 @@ export const MatchesPage: React.FC = () => {
     awayScore: '',
     livePeriod: '',
     liveMinute: '',
-    matchTime: new Date().toISOString().slice(0, 16),
+    matchTime: utcToBdtInput(new Date()),
     status: 'upcoming' as 'upcoming' | 'live' | 'finished',
     venue: '',
     playerImage: '',
@@ -310,13 +331,14 @@ export const MatchesPage: React.FC = () => {
       awayScore: '',
       livePeriod: '',
       liveMinute: '',
-      matchTime: new Date().toISOString().slice(0, 16),
+      matchTime: utcToBdtInput(new Date()),
       status: 'upcoming',
       venue: '',
       playerImage: '',
       bgImage: '',
       referralLink: '',
     });
+    setTimeText(utcToBdtInput(new Date()).slice(11, 16));
     setIsModalOpen(true);
   };
 
@@ -324,11 +346,9 @@ export const MatchesPage: React.FC = () => {
   const openEditModal = (match: MatchItem) => {
     setEditingMatch(match);
 
-    let formattedTime = new Date().toISOString().slice(0, 16);
+    let formattedTime = utcToBdtInput(new Date());
     if (match.matchTime) {
-      try {
-        formattedTime = new Date(match.matchTime).toISOString().slice(0, 16);
-      } catch (e) { }
+      formattedTime = utcToBdtInput(match.matchTime) || formattedTime;
     }
 
     const dateStr = match.matchTime ? new Date(match.matchTime).toISOString().slice(0, 10) : '';
@@ -355,6 +375,7 @@ export const MatchesPage: React.FC = () => {
       bgImage: match.bgImage || '',
       referralLink: match.referralLink || '',
     });
+    setTimeText(formattedTime.slice(11, 16));
     setIsModalOpen(true);
   };
 
@@ -386,14 +407,17 @@ export const MatchesPage: React.FC = () => {
       return;
     }
 
+    // Form time is BDT (UTC+6); send UTC to the backend
+    const payload = { ...formData, matchTime: formData.matchTime ? bdtInputToUtcIso(formData.matchTime) : formData.matchTime };
+
     try {
       if (editingMatch) {
-        const res = await api.put(`/matches/${editingMatch.id}`, formData);
+        const res = await api.put(`/matches/${editingMatch.id}`, payload);
         if (res.data?.success) {
           toast.success('Match updated and locked against sync overwrites!');
         }
       } else {
-        const res = await api.post('/matches', formData);
+        const res = await api.post('/matches', payload);
         if (res.data?.success) {
           toast.success('New match created successfully!');
         }
@@ -583,12 +607,14 @@ export const MatchesPage: React.FC = () => {
     try {
       const d = new Date(isoStr);
       if (isNaN(d.getTime())) return 'N/A';
-      return d.toLocaleString('en-US', {
+      // Shown in BDT (UTC+6), 24-hour
+      return new Date(d.getTime() + BDT_OFFSET_MS).toLocaleString('en-US', {
+        timeZone: 'UTC',
         month: 'short',
         day: 'numeric',
-        hour: 'numeric',
+        hour: '2-digit',
         minute: '2-digit',
-        hour12: true,
+        hourCycle: 'h23',
       });
     } catch {
       return 'N/A';
@@ -1759,13 +1785,42 @@ export const MatchesPage: React.FC = () => {
                       <label className="font-semibold text-slate-300 flex items-center gap-1 text-xs">
                         <Clock3 className="h-3.5 w-3.5 text-rose-400" /> Match Time <span className="text-rose-400">*</span>
                       </label>
-                      <input
-                        type="datetime-local"
-                        value={formData.matchTime}
-                        onChange={(e) => setFormData({ ...formData, matchTime: e.target.value })}
-                        required
-                        className="h-9 w-full rounded-xl border border-slate-800 bg-slate-950 px-3 font-mono text-xs text-slate-100 focus:border-rose-500 focus:outline-none"
-                      />
+                      <div className="grid grid-cols-[1fr_auto] gap-2">
+                        <input
+                          type="date"
+                          value={formData.matchTime.slice(0, 10)}
+                          onChange={(e) =>
+                            setFormData({ ...formData, matchTime: `${e.target.value}T${formData.matchTime.slice(11, 16) || '00:00'}` })
+                          }
+                          required
+                          className="h-9 w-full rounded-xl border border-slate-800 bg-slate-950 px-3 font-mono text-xs text-slate-100 focus:border-rose-500 focus:outline-none"
+                        />
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="18:00"
+                          maxLength={5}
+                          value={timeText}
+                          onChange={(e) => {
+                            let v = e.target.value.replace(/[^\d:]/g, '');
+                            if (/^\d{3,4}$/.test(v)) v = `${v.slice(0, v.length - 2)}:${v.slice(-2)}`;
+                            setTimeText(v);
+                            const m = /^([01]?\d|2[0-3]):([0-5]\d)$/.exec(v);
+                            if (m) {
+                              setFormData({ ...formData, matchTime: `${formData.matchTime.slice(0, 10)}T${m[1].padStart(2, '0')}:${m[2]}` });
+                            }
+                          }}
+                          onBlur={() => setTimeText(formData.matchTime.slice(11, 16))}
+                          required
+                          pattern="([01]?[0-9]|2[0-3]):[0-5][0-9]"
+                          title="24-hour time, e.g. 18:00"
+                          className="h-9 w-20 rounded-xl border border-slate-800 bg-slate-950 px-3 text-center font-mono text-xs text-slate-100 focus:border-rose-500 focus:outline-none"
+                        />
+                      </div>
+                      <p className="text-[11px] text-slate-500">
+                        Bangladesh time (BDT, UTC+6), 24-hour format. Saved automatically as UTC
+                        {formData.matchTime.length >= 16 && ` → ${bdtInputToUtcIso(formData.matchTime).slice(0, 16).replace('T', ' ')} UTC`}.
+                      </p>
                     </div>
 
                     {/* Status Segmented Buttons */}
