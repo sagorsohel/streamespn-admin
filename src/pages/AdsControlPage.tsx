@@ -45,6 +45,7 @@ export const AdsControlPage: React.FC = () => {
     isFooterAdsEnabled: true,
     matchListAds: '',
     isMatchListAdsEnabled: true,
+    isTopGoogleAdEnabled: true,
     floatMobileAds: '',
     floatDesktopAds: '',
     histatsScript: '',
@@ -55,7 +56,7 @@ export const AdsControlPage: React.FC = () => {
   const AdToggle = ({
     field,
   }: {
-    field: 'isNavAdsEnabled' | 'isModalSignupAdsEnabled' | 'isFooterAdsEnabled' | 'isMatchListAdsEnabled';
+    field: 'isNavAdsEnabled' | 'isModalSignupAdsEnabled' | 'isFooterAdsEnabled' | 'isMatchListAdsEnabled' | 'isTopGoogleAdEnabled';
   }) => {
     const on = formData[field];
     return (
@@ -125,6 +126,7 @@ export const AdsControlPage: React.FC = () => {
           isFooterAdsEnabled: s.isFooterAdsEnabled !== undefined ? Boolean(s.isFooterAdsEnabled) : true,
           matchListAds: s.matchListAds || '',
           isMatchListAdsEnabled: s.isMatchListAdsEnabled !== undefined ? Boolean(s.isMatchListAdsEnabled) : true,
+          isTopGoogleAdEnabled: s.isTopGoogleAdEnabled !== undefined ? Boolean(s.isTopGoogleAdEnabled) : true,
           floatMobileAds: s.floatMobileAds || '',
           floatDesktopAds: s.floatDesktopAds || '',
           histatsScript: s.histatsScript || '',
@@ -650,6 +652,22 @@ hs.src = ('//s10.histats.com/js15_as.js');
                 placeholder="Paste Google AdSense (<ins class='adsbygoogle' ...></ins>) or banner ad code..."
                 className="w-full rounded-xl border border-slate-800 bg-slate-950 p-3.5 font-mono text-xs text-emerald-400 placeholder-slate-600 focus:border-rose-500 focus:outline-none"
               />
+            </div>
+
+            {/* Top Google Ad (hard-coded, start & end of every page) — ON/OFF only */}
+            <div className="rounded-2xl border border-sky-500/40 bg-slate-900/90 p-5 shadow-xl backdrop-blur-md">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <Layout className="h-4 w-4 text-sky-400" />
+                    Page Google Ad (Start & End of Every Page)
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Built-in Google AdSense ad (code is hard-coded in the website), shown at the start of every page below the navbar and again above the footer. Just turn it ON or OFF here.
+                  </p>
+                </div>
+                <AdToggle field="isTopGoogleAdEnabled" />
+              </div>
             </div>
 
             {/* Match List Ad (below "UPCOMING" / "More Events" heading, above match cards) */}
