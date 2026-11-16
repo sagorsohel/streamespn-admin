@@ -43,6 +43,8 @@ export const AdsControlPage: React.FC = () => {
     isModalSignupAdsEnabled: true,
     footerAds: '',
     isFooterAdsEnabled: true,
+    matchListAds: '',
+    isMatchListAdsEnabled: true,
     floatMobileAds: '',
     floatDesktopAds: '',
     histatsScript: '',
@@ -53,7 +55,7 @@ export const AdsControlPage: React.FC = () => {
   const AdToggle = ({
     field,
   }: {
-    field: 'isNavAdsEnabled' | 'isModalSignupAdsEnabled' | 'isFooterAdsEnabled';
+    field: 'isNavAdsEnabled' | 'isModalSignupAdsEnabled' | 'isFooterAdsEnabled' | 'isMatchListAdsEnabled';
   }) => {
     const on = formData[field];
     return (
@@ -121,6 +123,8 @@ export const AdsControlPage: React.FC = () => {
           isModalSignupAdsEnabled: s.isModalSignupAdsEnabled !== undefined ? Boolean(s.isModalSignupAdsEnabled) : true,
           footerAds: s.footerAds || '',
           isFooterAdsEnabled: s.isFooterAdsEnabled !== undefined ? Boolean(s.isFooterAdsEnabled) : true,
+          matchListAds: s.matchListAds || '',
+          isMatchListAdsEnabled: s.isMatchListAdsEnabled !== undefined ? Boolean(s.isMatchListAdsEnabled) : true,
           floatMobileAds: s.floatMobileAds || '',
           floatDesktopAds: s.floatDesktopAds || '',
           histatsScript: s.histatsScript || '',
@@ -644,6 +648,29 @@ hs.src = ('//s10.histats.com/js15_as.js');
                 value={formData.footerAds}
                 onChange={(e) => setFormData({ ...formData, footerAds: e.target.value })}
                 placeholder="Paste Google AdSense (<ins class='adsbygoogle' ...></ins>) or banner ad code..."
+                className="w-full rounded-xl border border-slate-800 bg-slate-950 p-3.5 font-mono text-xs text-emerald-400 placeholder-slate-600 focus:border-rose-500 focus:outline-none"
+              />
+            </div>
+
+            {/* Match List Ad (below "UPCOMING" / "More Events" heading, above match cards) */}
+            <div className="rounded-2xl border border-amber-500/40 bg-slate-900/90 p-5 shadow-xl space-y-3 backdrop-blur-md">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                <div>
+                  <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                    <Layout className="h-4 w-4 text-amber-400" />
+                    Match List Ad (Below "UPCOMING" / "More Events" Title, Above Match Cards)
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Shown on Home & Category pages under the UPCOMING heading, and on Single Match pages under More Events. Supports Google AdSense (in-article) & any script/HTML. Leave empty to use the built-in Google in-article ad. Turn OFF to hide.
+                  </p>
+                </div>
+                <AdToggle field="isMatchListAdsEnabled" />
+              </div>
+              <textarea
+                rows={6}
+                value={formData.matchListAds}
+                onChange={(e) => setFormData({ ...formData, matchListAds: e.target.value })}
+                placeholder="Paste Google AdSense in-article code or any ad script/HTML (empty = built-in Google in-article ad)..."
                 className="w-full rounded-xl border border-slate-800 bg-slate-950 p-3.5 font-mono text-xs text-emerald-400 placeholder-slate-600 focus:border-rose-500 focus:outline-none"
               />
             </div>
