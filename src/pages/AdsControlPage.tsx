@@ -38,14 +38,40 @@ export const AdsControlPage: React.FC = () => {
     headAds: '',
     isHeadAdsEnabled: true,
     navAds: '',
+    isNavAdsEnabled: true,
     modalSignupAds: '',
+    isModalSignupAdsEnabled: true,
     footerAds: '',
+    isFooterAdsEnabled: true,
     floatMobileAds: '',
     floatDesktopAds: '',
     histatsScript: '',
     membershipReferralLink: '',
     globalSignInReferralLink: '',
   });
+
+  const AdToggle = ({
+    field,
+  }: {
+    field: 'isNavAdsEnabled' | 'isModalSignupAdsEnabled' | 'isFooterAdsEnabled';
+  }) => {
+    const on = formData[field];
+    return (
+      <button
+        type="button"
+        onClick={() => setFormData((prev) => ({ ...prev, [field]: !prev[field] }))}
+        className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-xs font-extrabold transition-all shrink-0 cursor-pointer ${
+          on
+            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 hover:bg-emerald-500/30'
+            : 'bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700'
+        }`}
+        title={on ? 'ON - click to turn OFF' : 'OFF - click to turn ON'}
+      >
+        {on ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
+        <span>{on ? 'ON' : 'OFF'}</span>
+      </button>
+    );
+  };
 
   // Fetch Current Settings
   const fetchSettings = async () => {
@@ -90,8 +116,11 @@ export const AdsControlPage: React.FC = () => {
           headAds: s.headAds || '',
           isHeadAdsEnabled: s.isHeadAdsEnabled !== undefined ? Boolean(s.isHeadAdsEnabled) : true,
           navAds: s.navAds || '',
+          isNavAdsEnabled: s.isNavAdsEnabled !== undefined ? Boolean(s.isNavAdsEnabled) : true,
           modalSignupAds: s.modalSignupAds || '',
+          isModalSignupAdsEnabled: s.isModalSignupAdsEnabled !== undefined ? Boolean(s.isModalSignupAdsEnabled) : true,
           footerAds: s.footerAds || '',
+          isFooterAdsEnabled: s.isFooterAdsEnabled !== undefined ? Boolean(s.isFooterAdsEnabled) : true,
           floatMobileAds: s.floatMobileAds || '',
           floatDesktopAds: s.floatDesktopAds || '',
           histatsScript: s.histatsScript || '',
@@ -560,13 +589,16 @@ hs.src = ('//s10.histats.com/js15_as.js');
                     Ad code displayed under navigation header bar (728x90 or 320x50 iframe / JS code).
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => insertTemplate('navAds', 'atOptions')}
-                  className="text-[11px] font-mono bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition-all"
-                >
-                  + Insert Banner Code
-                </button>
+                <div className="flex items-center gap-2">
+                  <AdToggle field="isNavAdsEnabled" />
+                  <button
+                    type="button"
+                    onClick={() => insertTemplate('navAds', 'atOptions')}
+                    className="text-[11px] font-mono bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition-all"
+                  >
+                    + Insert Banner Code
+                  </button>
+                </div>
               </div>
               <textarea
                 rows={5}
@@ -590,6 +622,7 @@ hs.src = ('//s10.histats.com/js15_as.js');
                   </p>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
+                  <AdToggle field="isFooterAdsEnabled" />
                   <button
                     type="button"
                     onClick={() => insertTemplate('footerAds', 'html')}
@@ -627,13 +660,16 @@ hs.src = ('//s10.histats.com/js15_as.js');
                     Pop-up modal ad or registration prompt code shown on stream click.
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => insertTemplate('modalSignupAds', 'script')}
-                  className="text-[11px] font-mono bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition-all"
-                >
-                  + Insert Pop-up Code
-                </button>
+                <div className="flex items-center gap-2">
+                  <AdToggle field="isModalSignupAdsEnabled" />
+                  <button
+                    type="button"
+                    onClick={() => insertTemplate('modalSignupAds', 'script')}
+                    className="text-[11px] font-mono bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1 rounded-lg border border-slate-700 transition-all"
+                  >
+                    + Insert Pop-up Code
+                  </button>
+                </div>
               </div>
               <textarea
                 rows={5}
